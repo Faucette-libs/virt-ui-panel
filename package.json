@@ -1,0 +1,32 @@
+{
+  "name": "virt-ui-panel",
+  "version": "0.0.1",
+  "description": "virt material ui panel",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bakasho-libs/virt-ui-panel.git"
+  },
+  "scripts": {
+    "example": "comn -f ./example/src/index.js -o ./example/index.js"
+  },
+  "main": "src/index.js",
+  "author": "Bakasho Team",
+  "license": "MIT",
+  "keywords": [
+    "virt-ui-panel",
+    "virt-ui-panel.js"
+  ],
+  "readmeFilename": "README.md",
+  "devDependencies": {
+    "comn": "git://github.com/nathanfaucett/comn.git",
+    "grunt": "^0.4.5",
+    "grunt-contrib-jshint": "^0.11.3",
+    "grunt-jsbeautifier": "^0.2.10"
+  },
+  "dependencies": {
+    "clamp": "git://github.com/nathanfaucett/clamp.git",
+    "prop_types": "git://github.com/nathanfaucett/prop_types.git",
+    "virt": "git://github.com/nathanfaucett/virt.git",
+    "virt-dom": "git://github.com/nathanfaucett/virt-dom.git"
+  }
+}
