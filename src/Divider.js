@@ -1,5 +1,7 @@
 var virt = require("virt"),
-    propTypes = require("prop_types");
+    virtDOM = require("virt-dom"),
+    propTypes = require("prop_types"),
+    domDimensions = require("dom_dimensions");
 
 
 var DividerPrototype;
@@ -14,7 +16,6 @@ function Divider(props, children, context) {
     virt.Component.call(this, props, children, context);
 
     this.dragging = false;
-    this.previous = NaN;
 
     this.onMouseDown = function(e) {
         return _this.__onMouseDown(e);
@@ -34,7 +35,8 @@ Divider.propTypes = {
     x: propTypes.number,
     y: propTypes.number,
     vertical: propTypes.bool,
-    onDrag: propTypes.func.isRequired
+    onDrag: propTypes.func.isRequired,
+    panel: propTypes.object.isRequired
 };
 
 Divider.defaultProps = {
@@ -57,25 +59,14 @@ DividerPrototype.__onMouseUp = function() {
     }
 };
 DividerPrototype.__onMouseMove = function(e) {
-    var props = this.props,
-        delta, tmp;
+    var props = this.props;
 
     if (this.dragging) {
         if (props.vertical) {
-            delta = e.pageX;
+            props.onDrag(e.pageX - domDimensions.left(virtDOM.findDOMNode(props.panel)));
         } else {
-            delta = e.pageY;
+            props.onDrag(e.pageY - domDimensions.top(virtDOM.findDOMNode(props.panel)));
         }
-        tmp = delta;
-
-        if (!this.previous) {
-            this.previous = delta;
-        }
-
-        delta = delta - this.previous;
-        this.previous = tmp;
-
-        props.onDrag(delta);
     }
 };
 

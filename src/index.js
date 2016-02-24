@@ -67,8 +67,8 @@ Panel.contextTypes = {
 
 Panel.defaultProps = {
     divider: 0.5,
-    min: 0.1,
-    max: 0.9,
+    min: NaN,
+    max: NaN,
     minPixel: NaN,
     maxPixel: NaN,
     x: 0,
@@ -84,38 +84,52 @@ Panel.defaultProps = {
 
 PanelPrototype = Panel.prototype;
 
-PanelPrototype.__onDrag = function(delta) {
+PanelPrototype.__onDrag = function(offset) {
     var props = this.props,
         vertical = props.left && props.right,
         divider = 0;
 
     if (vertical) {
-        divider = delta / props.width;
+        divider = offset / props.width;
     } else {
-        divider = delta / props.height;
+        divider = offset / props.height;
     }
 
     this.setState({
-        divider: clampDivider(this.state.divider + divider, props)
+        divider: clampDivider(divider, props)
     });
 };
 
 function clampDivider(divider, props) {
     var vertical = props.left && props.right,
-        scalar = (vertical ? props.width : props.height),
         min = props.min,
         max = props.max,
         minPixel = props.minPixel,
-        maxPixel = props.maxPixel;
+        maxPixel = props.maxPixel,
+        scalar = (vertical ? props.width : props.height);
 
-    if ((minPixel || maxPixel) && scalar) {
-        minPixel = minPixel || (min * scalar);
-        maxPixel = maxPixel || (max * scalar);
-        min = minPixel / scalar;
-        max = maxPixel / scalar;
+    if (scalar) {
+        if (minPixel) {
+            minPixel = minPixel || (min * scalar);
+            min = minPixel / scalar;
+        }
+        if (maxPixel) {
+            maxPixel = maxPixel || (max * scalar);
+            max = maxPixel / scalar;
+        }
     }
 
-    return clamp(divider, min, max);
+    if (min || max) {
+        if (!max) {
+            return clamp(divider, min, 1);
+        } else if (!min) {
+            return clamp(divider, 0, max);
+        } else {
+            return clamp(divider, min, max);
+        }
+    } else {
+        return clamp(divider, 0, 1);
+    }
 }
 
 PanelPrototype.getTheme = function() {
@@ -149,7 +163,7 @@ PanelPrototype.renderChildren = function() {
         content = props.content,
         leftChild = props.left || props.top,
         rightChild = props.right || props.bottom,
-        renderChildren, renderLeftChild, renderRightChild;
+        renderChildren, renderLeftChild, renderRightChild, leftProps, rightProps;
 
     if (content) {
         return content;
@@ -158,22 +172,33 @@ PanelPrototype.renderChildren = function() {
     } else {
         renderChildren = new Array(3);
 
-        renderLeftChild = virt.cloneView(leftChild, {
+        leftProps = {
             x: 0,
             y: 0,
             width: vertical ? (width * divider) : width,
             height: vertical ? height : (height * divider)
-        });
+        };
+        if (leftChild.type === Panel) {
+            renderLeftChild = virt.cloneView(leftChild, leftProps);
+        } else {
+            renderLeftChild = virt.createView(Panel, leftProps, leftChild);
+        }
 
-        renderRightChild = virt.cloneView(rightChild, {
+        rightProps = {
             x: vertical ? renderLeftChild.props.width : 0,
             y: vertical ? 0 : renderLeftChild.props.height,
             width: vertical ? (width * (1 - divider)) : width,
             height: vertical ? height : (height * (1 - divider))
-        });
+        };
+        if (rightChild.type === Panel) {
+            renderRightChild = virt.cloneView(rightChild, rightProps);
+        } else {
+            renderRightChild = virt.createView(Panel, rightProps, rightChild);
+        }
 
         renderChildren[0] = renderLeftChild;
         renderChildren[1] = virt.createView(Divider, {
+            panel: this,
             x: renderRightChild.props.x,
             y: renderRightChild.props.y,
             vertical: !!vertical,

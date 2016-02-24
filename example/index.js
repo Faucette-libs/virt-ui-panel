@@ -148,9 +148,12 @@ AppPrototype.render = function() {
                 width: size.width,
                 height: size.height,
                 minPixel: 49,
+                max: 0.5,
                 divider: (size.height ? 49 / size.height : 0),
                 top: virt.createView(Panel, virt.createView("p", "Menu")),
                 bottom: virt.createView(Panel, {
+                    minPixel: 128,
+                    max: 0.9,
                     divider: 0.25,
                     left: virt.createView(Panel, virt.createView("p", "Left")),
                     right: virt.createView(Panel, virt.createView("p", "Right"))
@@ -491,8 +494,8 @@ Panel.contextTypes = {
 
 Panel.defaultProps = {
     divider: 0.5,
-    min: 0.1,
-    max: 0.9,
+    min: NaN,
+    max: NaN,
     minPixel: NaN,
     maxPixel: NaN,
     x: 0,
@@ -508,38 +511,52 @@ Panel.defaultProps = {
 
 PanelPrototype = Panel.prototype;
 
-PanelPrototype.__onDrag = function(delta) {
+PanelPrototype.__onDrag = function(offset) {
     var props = this.props,
         vertical = props.left && props.right,
         divider = 0;
 
     if (vertical) {
-        divider = delta / props.width;
+        divider = offset / props.width;
     } else {
-        divider = delta / props.height;
+        divider = offset / props.height;
     }
 
     this.setState({
-        divider: clampDivider(this.state.divider + divider, props)
+        divider: clampDivider(divider, props)
     });
 };
 
 function clampDivider(divider, props) {
     var vertical = props.left && props.right,
-        scalar = (vertical ? props.width : props.height),
         min = props.min,
         max = props.max,
         minPixel = props.minPixel,
-        maxPixel = props.maxPixel;
+        maxPixel = props.maxPixel,
+        scalar = (vertical ? props.width : props.height);
 
-    if ((minPixel || maxPixel) && scalar) {
-        minPixel = minPixel || (min * scalar);
-        maxPixel = maxPixel || (max * scalar);
-        min = minPixel / scalar;
-        max = maxPixel / scalar;
+    if (scalar) {
+        if (minPixel) {
+            minPixel = minPixel || (min * scalar);
+            min = minPixel / scalar;
+        }
+        if (maxPixel) {
+            maxPixel = maxPixel || (max * scalar);
+            max = maxPixel / scalar;
+        }
     }
 
-    return clamp(divider, min, max);
+    if (min || max) {
+        if (!max) {
+            return clamp(divider, min, 1);
+        } else if (!min) {
+            return clamp(divider, 0, max);
+        } else {
+            return clamp(divider, min, max);
+        }
+    } else {
+        return clamp(divider, 0, 1);
+    }
 }
 
 PanelPrototype.getTheme = function() {
@@ -573,7 +590,7 @@ PanelPrototype.renderChildren = function() {
         content = props.content,
         leftChild = props.left || props.top,
         rightChild = props.right || props.bottom,
-        renderChildren, renderLeftChild, renderRightChild;
+        renderChildren, renderLeftChild, renderRightChild, leftProps, rightProps;
 
     if (content) {
         return content;
@@ -582,22 +599,33 @@ PanelPrototype.renderChildren = function() {
     } else {
         renderChildren = new Array(3);
 
-        renderLeftChild = virt.cloneView(leftChild, {
+        leftProps = {
             x: 0,
             y: 0,
             width: vertical ? (width * divider) : width,
             height: vertical ? height : (height * divider)
-        });
+        };
+        if (leftChild.type === Panel) {
+            renderLeftChild = virt.cloneView(leftChild, leftProps);
+        } else {
+            renderLeftChild = virt.createView(Panel, leftProps, leftChild);
+        }
 
-        renderRightChild = virt.cloneView(rightChild, {
+        rightProps = {
             x: vertical ? renderLeftChild.props.width : 0,
             y: vertical ? 0 : renderLeftChild.props.height,
             width: vertical ? (width * (1 - divider)) : width,
             height: vertical ? height : (height * (1 - divider))
-        });
+        };
+        if (rightChild.type === Panel) {
+            renderRightChild = virt.cloneView(rightChild, rightProps);
+        } else {
+            renderRightChild = virt.createView(Panel, rightProps, rightChild);
+        }
 
         renderChildren[0] = renderLeftChild;
         renderChildren[1] = virt.createView(Divider, {
+            panel: this,
             x: renderRightChild.props.x,
             y: renderRightChild.props.y,
             vertical: !!vertical,
@@ -9644,7 +9672,9 @@ function(require, exports, module, undefined, global) {
 /* ../../src/Divider.js */
 
 var virt = require(1),
-    propTypes = require(3);
+    virtDOM = require(2),
+    propTypes = require(3),
+    domDimensions = require(185);
 
 
 var DividerPrototype;
@@ -9659,7 +9689,6 @@ function Divider(props, children, context) {
     virt.Component.call(this, props, children, context);
 
     this.dragging = false;
-    this.previous = NaN;
 
     this.onMouseDown = function(e) {
         return _this.__onMouseDown(e);
@@ -9679,7 +9708,8 @@ Divider.propTypes = {
     x: propTypes.number,
     y: propTypes.number,
     vertical: propTypes.bool,
-    onDrag: propTypes.func.isRequired
+    onDrag: propTypes.func.isRequired,
+    panel: propTypes.object.isRequired
 };
 
 Divider.defaultProps = {
@@ -9702,25 +9732,14 @@ DividerPrototype.__onMouseUp = function() {
     }
 };
 DividerPrototype.__onMouseMove = function(e) {
-    var props = this.props,
-        delta, tmp;
+    var props = this.props;
 
     if (this.dragging) {
         if (props.vertical) {
-            delta = e.pageX;
+            props.onDrag(e.pageX - domDimensions.left(virtDOM.findDOMNode(props.panel)));
         } else {
-            delta = e.pageY;
+            props.onDrag(e.pageY - domDimensions.top(virtDOM.findDOMNode(props.panel)));
         }
-        tmp = delta;
-
-        if (!this.previous) {
-            this.previous = delta;
-        }
-
-        delta = delta - this.previous;
-        this.previous = tmp;
-
-        props.onDrag(delta);
     }
 };
 
@@ -9793,6 +9812,205 @@ DividerPrototype.render = function() {
         )
     );
 };
+
+
+},
+function(require, exports, module, undefined, global) {
+/* ../../node_modules/dom_dimensions/src/index.js */
+
+var getCurrentStyle = require(186),
+    isElement = require(171);
+
+
+var domDimensions = exports;
+
+
+domDimensions.top = function(node) {
+    if (isElement(node)) {
+        return node.getBoundingClientRect().top;
+    } else {
+        return 0;
+    }
+};
+
+domDimensions.right = function(node) {
+    if (isElement(node)) {
+        return domDimensions.left(node) + node.offsetWidth;
+    } else {
+        return 0;
+    }
+};
+
+domDimensions.bottom = function(node) {
+    if (isElement(node)) {
+        return domDimensions.top(node) + node.offsetHeight;
+    } else {
+        return 0;
+    }
+};
+
+domDimensions.left = function(node) {
+    if (isElement(node)) {
+        return node.getBoundingClientRect().left;
+    } else {
+        return 0;
+    }
+};
+
+domDimensions.width = function(node) {
+    if (isElement(node)) {
+        return domDimensions.right(node) - domDimensions.left(node);
+    } else {
+        return 0;
+    }
+};
+
+domDimensions.height = function(node) {
+    if (isElement(node)) {
+        return domDimensions.bottom(node) - domDimensions.top(node);
+    } else {
+        return 0;
+    }
+};
+
+domDimensions.marginTop = function(node) {
+    if (isElement(node)) {
+        return parseInt(getCurrentStyle(node, "marginTop"), 10);
+    } else {
+        return 0;
+    }
+};
+
+domDimensions.marginRight = function(node) {
+    if (isElement(node)) {
+        return parseInt(getCurrentStyle(node, "marginRight"), 10);
+    } else {
+        return 0;
+    }
+};
+
+domDimensions.marginBottom = function(node) {
+    if (isElement(node)) {
+        return parseInt(getCurrentStyle(node, "marginRight"), 10);
+    } else {
+        return 0;
+    }
+};
+
+domDimensions.marginLeft = function(node) {
+    if (isElement(node)) {
+        return parseInt(getCurrentStyle(node, "marginLeft"), 10);
+    } else {
+        return 0;
+    }
+};
+
+domDimensions.outerWidth = function(node) {
+    if (isElement(node)) {
+        return domDimensions.width(node) + domDimensions.marginLeft(node) + domDimensions.marginRight(node);
+    } else {
+        return 0;
+    }
+};
+
+domDimensions.outerHeight = function(node) {
+    if (isElement(node)) {
+        return domDimensions.height(node) + domDimensions.marginTop(node) + domDimensions.marginBottom(node);
+    } else {
+        return 0;
+    }
+};
+
+
+},
+function(require, exports, module, undefined, global) {
+/* ../../node_modules/get_current_style/src/index.js */
+
+var supports = require(135),
+    environment = require(99),
+    isElement = require(171),
+    isString = require(19),
+    camelize = require(187);
+
+
+var baseGetCurrentStyle;
+
+
+module.exports = getCurrentStyle;
+
+
+function getCurrentStyle(node, style) {
+    if (isElement(node) && isString(style)) {
+        return baseGetCurrentStyle(node, style);
+    } else {
+        return "";
+    }
+}
+
+
+if (supports.dom && environment.document.defaultView) {
+    baseGetCurrentStyle = function(node, style) {
+        return node.ownerDocument.defaultView.getComputedStyle(node, "")[camelize(style)] || "";
+    };
+} else {
+    baseGetCurrentStyle = function(node, style) {
+        if (node.currentStyle) {
+            return node.currentStyle[camelize(style)] || "";
+        } else {
+            return node.style[camelize(style)] || "";
+        }
+    };
+}
+
+
+},
+function(require, exports, module, undefined, global) {
+/* ../../node_modules/camelize/src/index.js */
+
+var reInflect = require(188),
+    capitalizeString = require(189);
+
+
+module.exports = camelize;
+
+
+function camelize(string, lowFirstLetter) {
+    var parts, part, i, il;
+
+    lowFirstLetter = lowFirstLetter !== false;
+    parts = string.match(reInflect);
+    i = lowFirstLetter ? 0 : -1;
+    il = parts.length - 1;
+
+    while (i++ < il) {
+        parts[i] = capitalizeString(parts[i]);
+    }
+
+    if (lowFirstLetter && (part = parts[0])) {
+        parts[0] = part.charAt(0).toLowerCase() + part.slice(1);
+    }
+
+    return parts.join("");
+}
+
+
+},
+function(require, exports, module, undefined, global) {
+/* ../../node_modules/re_inflect/src/index.js */
+
+module.exports = /[^A-Z-_ ]+|[A-Z][^A-Z-_ ]+|[^a-z-_ ]+/g;
+
+
+},
+function(require, exports, module, undefined, global) {
+/* ../../node_modules/capitalize_string/src/index.js */
+
+module.exports = capitalizeString;
+
+
+function capitalizeString(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
 
 
 }], null, void(0), (new Function("return this;"))()));

@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "clamp": "git://github.com/nathanfaucett/clamp.git",
+    "dom_dimensions": "git://github.com/nathanfaucett/dom_dimensions.git",
     "prop_types": "git://github.com/nathanfaucett/prop_types.git",
     "virt": "git://github.com/nathanfaucett/virt.git",
     "virt-dom": "git://github.com/nathanfaucett/virt-dom.git"

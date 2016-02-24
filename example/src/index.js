@@ -87,9 +87,12 @@ AppPrototype.render = function() {
                 width: size.width,
                 height: size.height,
                 minPixel: 49,
+                max: 0.5,
                 divider: (size.height ? 49 / size.height : 0),
                 top: virt.createView(Panel, virt.createView("p", "Menu")),
                 bottom: virt.createView(Panel, {
+                    minPixel: 128,
+                    max: 0.9,
                     divider: 0.25,
                     left: virt.createView(Panel, virt.createView("p", "Left")),
                     right: virt.createView(Panel, virt.createView("p", "Right"))
