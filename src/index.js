@@ -1,6 +1,6 @@
-var virt = require("virt"),
-    clamp = require("clamp"),
-    propTypes = require("prop_types"),
+var virt = require("@nathanfaucett/virt"),
+    clamp = require("@nathanfaucett/clamp"),
+    propTypes = require("@nathanfaucett/prop_types"),
     Divider = require("./Divider");
 
 
@@ -55,7 +55,7 @@ Panel.propTypes = {
 };
 
 Panel.contextTypes = {
-    muiTheme: propTypes.implement({
+    theme: propTypes.implement({
         styles: propTypes.implement({
             panel: propTypes.implement({
                 backgroundColor: propTypes.string.isRequired,
@@ -133,7 +133,7 @@ function clampDivider(divider, props) {
 }
 
 PanelPrototype.getTheme = function() {
-    return this.context.muiTheme.styles.panel;
+    return this.context.theme.styles.panel;
 };
 
 PanelPrototype.getStyles = function() {

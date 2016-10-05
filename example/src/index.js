@@ -1,6 +1,6 @@
-var virt = require("virt"),
-    virtDOM = require("virt-dom"),
-    propTypes = require("prop_types"),
+var virt = require("@nathanfaucett/virt"),
+    virtDOM = require("@nathanfaucett/virt-dom"),
+    propTypes = require("@nathanfaucett/prop_types"),
     Panel = require("../..");
 
 
@@ -27,7 +27,7 @@ virt.Component.extend(App, "App");
 AppPrototype = App.prototype;
 
 App.childContextTypes = {
-    muiTheme: propTypes.object.isRequired,
+    theme: propTypes.object.isRequired,
     size: propTypes.object.isRequired
 };
 
@@ -59,7 +59,7 @@ AppPrototype.componentWillUnmount = function() {
 AppPrototype.getChildContext = function() {
     return {
         size: this.state.size,
-        muiTheme: {
+        theme: {
             styles: {
                 panel: {
                     backgroundColor: "#eee",

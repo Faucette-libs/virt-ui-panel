@@ -1,7 +1,7 @@
-var virt = require("virt"),
-    virtDOM = require("virt-dom"),
-    propTypes = require("prop_types"),
-    domDimensions = require("dom_dimensions");
+var virt = require("@nathanfaucett/virt"),
+    virtDOM = require("@nathanfaucett/virt-dom"),
+    propTypes = require("@nathanfaucett/prop_types"),
+    domDimensions = require("@nathanfaucett/dom_dimensions");
 
 
 var DividerPrototype;
@@ -46,7 +46,7 @@ Divider.defaultProps = {
 };
 
 DividerPrototype.getTheme = function() {
-    return this.context.muiTheme.styles.panel;
+    return this.context.theme.styles.panel;
 };
 
 DividerPrototype.__onMouseDown = function() {
@@ -102,15 +102,13 @@ DividerPrototype.getStyles = function() {
         };
 
     if (vertical) {
-        styles.root.cursor = "ew-resize";
-
+        styles.root.cursor = styles.bar.cursor = styles.innerBar.cursor = "ew-resize";
         styles.innerBar.height = styles.bar.height = styles.root.height = "100%";
         styles.bar.width = styles.root.width = "9px";
         styles.innerBar.width = "1px";
         styles.innerBar.left = "4px";
     } else {
-        styles.root.cursor = "ns-resize";
-
+        styles.root.cursor = styles.bar.cursor = styles.innerBar.cursor = "ns-resize";
         styles.innerBar.width = styles.bar.width = styles.root.width = "100%";
         styles.bar.height = styles.root.height = "9px";
         styles.innerBar.height = "1px";
