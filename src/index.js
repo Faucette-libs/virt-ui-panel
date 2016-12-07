@@ -1,6 +1,7 @@
 var virt = require("@nathanfaucett/virt"),
     clamp = require("@nathanfaucett/clamp"),
     propTypes = require("@nathanfaucett/prop_types"),
+    isNumber = require("@nathanfaucett/is_number"),
     Divider = require("./Divider");
 
 
@@ -40,6 +41,7 @@ function Panel(props, children, context) {
 virt.Component.extend(Panel, "virt-ui-Panel");
 
 Panel.propTypes = {
+    onResize: propTypes.func,
     divider: propTypes.number,
     min: propTypes.number,
     max: propTypes.number,
@@ -51,7 +53,8 @@ Panel.propTypes = {
     left: propTypes.object,
     right: propTypes.object,
     top: propTypes.object,
-    bottom: propTypes.object
+    bottom: propTypes.object,
+    style: propTypes.object
 };
 
 Panel.contextTypes = {
@@ -79,7 +82,8 @@ Panel.defaultProps = {
     left: null,
     right: null,
     top: null,
-    bottom: null
+    bottom: null,
+    style: {}
 };
 
 PanelPrototype = Panel.prototype;
@@ -95,8 +99,14 @@ PanelPrototype.__onDrag = function(offset) {
         divider = offset / props.height;
     }
 
+    divider = clampDivider(divider, props);
+
+    if (props.onResize) {
+        props.onResize(divider);
+    }
+
     this.setState({
-        divider: clampDivider(divider, props)
+        divider: divider
     });
 };
 
@@ -138,11 +148,12 @@ PanelPrototype.getTheme = function() {
 
 PanelPrototype.getStyles = function() {
     var props = this.props,
+        style = props.style,
         styles = {
             root: {
-                backgroundColor: this.getTheme().backgroundColor,
-                zIndex: 1000,
-                position: "absolute",
+                backgroundColor: style.backgroundColor || this.getTheme().backgroundColor,
+                zIndex: isNumber(style.zIndex) ? style.zIndex : 1000,
+                position: style.position || "absolute",
                 left: props.x + "px",
                 top: props.y + "px",
                 width: props.width + "px",
@@ -181,7 +192,7 @@ PanelPrototype.renderChildren = function() {
         if (leftChild.type === Panel) {
             renderLeftChild = virt.cloneView(leftChild, leftProps);
         } else {
-            renderLeftChild = virt.createView(Panel, leftProps, leftChild);
+            renderLeftChild = virt.createView(Panel, leftProps, virt.cloneView(leftChild));
         }
 
         rightProps = {
@@ -193,7 +204,7 @@ PanelPrototype.renderChildren = function() {
         if (rightChild.type === Panel) {
             renderRightChild = virt.cloneView(rightChild, rightProps);
         } else {
-            renderRightChild = virt.createView(Panel, rightProps, rightChild);
+            renderRightChild = virt.createView(Panel, rightProps, virt.cloneView(rightChild));
         }
 
         renderChildren[0] = renderLeftChild;

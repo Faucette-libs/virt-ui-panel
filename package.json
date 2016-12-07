@@ -4,7 +4,7 @@
   "description": "virt material ui panel",
   "repository": {
     "type": "git",
-    "url": "https://github.com/bakasho-libs/virt-ui-panel.git"
+    "url": "https://github.com/Faucette-libs/virt-ui-panel.git"
   },
   "scripts": {
     "example": "comn -f ./example/src/index.js -o ./example/index.js -m"
@@ -26,8 +26,9 @@
   "dependencies": {
     "@nathanfaucett/clamp": "^0.0.1",
     "@nathanfaucett/dom_dimensions": "^0.0.1",
+    "@nathanfaucett/is_number": "^0.0.1",
     "@nathanfaucett/prop_types": "^0.0.2",
-    "@nathanfaucett/virt": "^0.0.12",
-    "@nathanfaucett/virt-dom": "^0.0.14"
+    "@nathanfaucett/virt": "^0.0.13",
+    "@nathanfaucett/virt-dom": "^0.0.15"
   }
 }
