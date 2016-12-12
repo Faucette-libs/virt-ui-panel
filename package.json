@@ -29,6 +29,6 @@
     "@nathanfaucett/is_number": "^0.0.1",
     "@nathanfaucett/prop_types": "^0.0.2",
     "@nathanfaucett/virt": "^0.0.13",
-    "@nathanfaucett/virt-dom": "^0.0.15"
+    "@nathanfaucett/virt-dom": "^0.0.16"
   }
 }
